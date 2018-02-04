@@ -24,7 +24,7 @@ struct MainState {
     snake: Snake,
     apple: Apple,
     assets: Assets,
-    overlay_update_needed: bool,
+    ui_update_needed: bool,
     score_text: graphics::Text,
     game_over_text: graphics::Text,
 }
@@ -40,7 +40,7 @@ impl MainState {
             snake: Snake::new(),
             apple: Apple::new(),
             assets,
-            overlay_update_needed: true,
+            ui_update_needed: true,
             score_text,
             game_over_text,
         };
@@ -48,7 +48,7 @@ impl MainState {
         Ok(state)
     }
 
-    fn update_overlay(&mut self, ctx: &mut Context) -> GameResult<()> {
+    fn update_ui(&mut self, ctx: &mut Context) -> GameResult<()> {
         let score_text = format!("Score: {}", self.snake.score);
         self.score_text = graphics::Text::new(ctx, &score_text, &self.assets.font_default)?;
 
@@ -92,7 +92,7 @@ impl event::EventHandler for MainState {
                     self.apple = Apple::new();
                     snake.speed -= snake.speed / SPEED_INCREASE_FRACTION;
                     snake.score += 1;
-                    self.overlay_update_needed = true;
+                    self.ui_update_needed = true;
                     snake.grow = GROW_PER_APPLE;
                 }
 
@@ -111,8 +111,11 @@ impl event::EventHandler for MainState {
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
+        graphics::set_background_color(ctx, COLOR_BACKGROUND);
+        graphics::set_color(ctx, COLOR_FOREGROUND)?;
         graphics::clear(ctx);
 
+        // Draw apple
         {
             let apple = &self.apple;
             let since_spawn = since(apple.spawned_at);
@@ -121,6 +124,7 @@ impl event::EventHandler for MainState {
             }
         }
 
+        // Draw snake
         {
             let snake = &self.snake;
 
@@ -142,20 +146,48 @@ impl event::EventHandler for MainState {
             }
         }
 
-        if self.overlay_update_needed {
-            self.update_overlay(ctx)?;
-            self.overlay_update_needed = false;
-        }
-
+        // Draw UI
         {
-            let dest = graphics::Point2::new(10.0, 10.0);
-            graphics::draw(ctx, &self.score_text, dest, 0.0)?;
-        }
+            if self.ui_update_needed {
+                self.update_ui(ctx)?;
+                self.ui_update_needed = false;
+            }
 
-        if let Some(lost_at) = self.snake.lost_at {
-            if since(lost_at) > GAME_OVER_TIMEOUT {
-                let dest = graphics::Point2::new(100.0, 100.0);
-                graphics::draw(ctx, &self.game_over_text, dest, 0.0)?;
+            // Draw info bar background
+            {
+                let width = ctx.conf.window_mode.width as f32;
+
+                let rect = graphics::Rect::new(0.0, 0.0, width, INFO_BAR_HIGHT);
+                graphics::rectangle(ctx, graphics::DrawMode::Fill, rect)?;
+
+                graphics::set_color(ctx, COLOR_BACKGROUND)?;
+                let rect = graphics::Rect::new(2.0, 2.0, width - 4.0, INFO_BAR_HIGHT - 4.0);
+                graphics::rectangle(ctx, graphics::DrawMode::Fill, rect)?;
+
+                graphics::set_color(ctx, COLOR_FOREGROUND)?;
+                let rect = graphics::Rect::new(4.0, 4.0, width - 8.0, INFO_BAR_HIGHT - 8.0);
+                graphics::rectangle(ctx, graphics::DrawMode::Fill, rect)?;
+            }
+
+            // Draw info bar content
+            {
+                graphics::set_color(ctx, COLOR_BACKGROUND)?;
+
+                let dest = graphics::Point2::new(
+                    12.0,
+                    (INFO_BAR_HIGHT - FONT_DEFAULT_SIZE as f32) / 2.0 - 4.0,
+                );
+                graphics::draw(ctx, &self.score_text, dest, 0.0)?;
+
+                graphics::set_color(ctx, COLOR_FOREGROUND)?;
+            }
+
+            // Draw game over text
+            if let Some(lost_at) = self.snake.lost_at {
+                if since(lost_at) > GAME_OVER_TIMEOUT {
+                    let dest = graphics::Point2::new(100.0, 155.0);
+                    graphics::draw(ctx, &self.game_over_text, dest, 0.0)?;
+                }
             }
         }
 
@@ -183,7 +215,7 @@ pub fn main() {
         .window_setup(conf::WindowSetup::default().title("Snake"))
         .window_mode(conf::WindowMode::default().dimensions(
             GRID_SIZE.x as u32 * GRID_TILE_SIZE as u32,
-            GRID_SIZE.y as u32 * GRID_TILE_SIZE as u32,
+            GRID_SIZE.y as u32 * GRID_TILE_SIZE as u32 + INFO_BAR_HIGHT as u32,
         ));
 
     let ctx = &mut cb.build().unwrap();

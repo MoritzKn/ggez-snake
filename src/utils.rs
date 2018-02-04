@@ -33,7 +33,7 @@ pub fn random_grid_pos() -> GridVector {
 pub fn gv_to_rect(gv: &GridVector) -> graphics::Rect {
     graphics::Rect::new(
         (f32::from(gv.x) * GRID_TILE_SIZE) - GRID_TILE_PADDING,
-        (f32::from(gv.y) * GRID_TILE_SIZE) - GRID_TILE_PADDING,
+        (f32::from(gv.y) * GRID_TILE_SIZE) - GRID_TILE_PADDING + INFO_BAR_HIGHT,
         GRID_TILE_SIZE - (GRID_TILE_PADDING * 2.0),
         GRID_TILE_SIZE - (GRID_TILE_PADDING * 2.0),
     )
