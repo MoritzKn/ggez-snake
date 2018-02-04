@@ -122,7 +122,7 @@ impl event::EventHandler for MainState {
                         snake.speed -= snake.speed / SPEED_INCREASE_FRACTION;
                         snake.score += 1;
                         self.ui_update_needed = true;
-                        snake.grow = GROW_PER_APPLE;
+                        snake.grow += GROW_PER_APPLE;
                     }
 
                     if snake.grow > 0 {
@@ -181,15 +181,13 @@ impl event::EventHandler for MainState {
                 for gv in &snake.tail {
                     graphics::rectangle(ctx, graphics::DrawMode::Fill, gv_to_rect(gv))?;
                 }
-            }
-
-            if let Some(lost_at) = snake.lost_at {
+            } else if let Some(lost_at) = snake.lost_at {
                 let since_lost = since(lost_at);
                 if since_lost < BLINK_LENGTH_AFTER_DEATH
                     && since_lost % (BLINK_INTERVAL * 2.0) < BLINK_INTERVAL
                 {
-                    for gv in &snake.tail {
-                        graphics::rectangle(ctx, graphics::DrawMode::Fill, gv_to_rect(gv))?;
+                    for segment in &snake.tail {
+                        graphics::rectangle(ctx, graphics::DrawMode::Fill, gv_to_rect(segment))?;
                     }
                 }
             }
