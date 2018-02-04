@@ -28,10 +28,11 @@ install:
     fi
 
 before_script:
-  - export PATH="$PATH:$HOME/.cargo/bin"
-  - which rustfmt || cargo install rustfmt
+  - rustup toolchain install nightly
+  - rustup component add --toolchain nightly rustfmt-preview
+  - which rustfmt || cargo install --force rustfmt-nightly
 
 script:
-  - cargo fmt -- --write-mode=diff
+  - cargo +nightly fmt --all -- --write-mode=diff
   - cargo build
   - cargo test
