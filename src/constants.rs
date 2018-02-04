@@ -2,7 +2,7 @@ use base_types::*;
 use ggez::graphics::Color;
 
 //--- Grid ---//
-pub const GRID_SIZE: GridVector = GridVector { x: 30, y: 20 };
+pub const GRID_SIZE: GridVector = GridVector { x: 48, y: 26 };
 pub const GRID_TILE_SIZE: f32 = 20.0;
 
 //--- Visual ---//
