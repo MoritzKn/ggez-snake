@@ -178,9 +178,17 @@ impl event::EventHandler for MainState {
             let snake = &self.snake;
 
             if snake.lost_at.is_none() {
-                for gv in &snake.tail {
-                    graphics::rectangle(ctx, graphics::DrawMode::Fill, gv_to_rect(gv))?;
+                for segement in &snake.tail {
+                    graphics::rectangle(ctx, graphics::DrawMode::Fill, gv_to_rect(segement))?;
                 }
+                let segement = &snake.tail[snake.tail.len() - 1];
+                graphics::set_color(ctx, COLOR_BACKGROUND)?;
+                graphics::rectangle(
+                    ctx,
+                    graphics::DrawMode::Fill,
+                    scale_rect(gv_to_rect(segement), -2.0),
+                )?;
+                graphics::set_color(ctx, COLOR_FOREGROUND)?;
             } else if let Some(lost_at) = snake.lost_at {
                 let since_lost = since(lost_at);
                 if since_lost < BLINK_LENGTH_AFTER_DEATH

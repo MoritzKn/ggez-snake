@@ -28,7 +28,7 @@ pub const GRID_TILE_PADDING: f32 = 1.0;
 pub const INFO_BAR_HIGHT: f32 = 40.0;
 
 //--- Game play ---//
-pub const INITIAL_SIZE: GridUnit = 1;
+pub const INITIAL_SIZE: GridUnit = 2;
 pub const INITIAL_SPEED: f64 = 0.06;
 pub const INITIAL_VELOCITY: GridVector = GridVector { x: 0, y: 0 };
 
