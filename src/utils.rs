@@ -38,3 +38,12 @@ pub fn gv_to_rect(gv: &GridVector) -> graphics::Rect {
         GRID_TILE_SIZE - (GRID_TILE_PADDING * 2.0),
     )
 }
+
+pub fn scale_rect(rect: graphics::Rect, diff: f32) -> graphics::Rect {
+    graphics::Rect::new(
+        rect.x - diff,
+        rect.y - diff,
+        rect.w + diff * 2.0,
+        rect.h + diff * 2.0,
+    )
+}
