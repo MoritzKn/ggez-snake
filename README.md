@@ -1,6 +1,6 @@
 # Snake
 
-![![Build Status](https://travis-ci.org/MoritzKn/ggez-snake.svg?branch=master)](https://travis-ci.org/MoritzKn/ggez-snake)
+[![Build Status](https://travis-ci.org/MoritzKn/ggez-snake.svg?branch=master)](https://travis-ci.org/MoritzKn/ggez-snake)
 
 Snake Game made with [ggez](http://ggez.rs/).
 
