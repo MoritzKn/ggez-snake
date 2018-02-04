@@ -12,7 +12,7 @@ pub struct Snake {
     pub last_round: Instant,
     pub lost_at: Option<Instant>,
     pub score: u32,
-    pub grow: GridCord,
+    pub grow: GridUnit,
 }
 
 impl Snake {

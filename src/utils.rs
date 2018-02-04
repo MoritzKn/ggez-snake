@@ -12,7 +12,7 @@ pub fn blinks(time: f64) -> bool {
     time % (BLINK_INTERVAL * 2.0) < BLINK_INTERVAL
 }
 
-pub fn modulus(n: GridCord, m: GridCord) -> GridCord {
+pub fn modulus(n: GridUnit, m: GridUnit) -> GridUnit {
     ((n % m) + m) % m
 }
 
@@ -25,8 +25,8 @@ pub fn wrap_in_grid(gv: GridVector) -> GridVector {
 
 pub fn random_grid_pos() -> GridVector {
     wrap_in_grid(GridVector {
-        x: random::<GridCord>(),
-        y: random::<GridCord>(),
+        x: random::<GridUnit>(),
+        y: random::<GridUnit>(),
     })
 }
 

@@ -1,9 +1,9 @@
-pub type GridCord = i16;
+pub type GridUnit = i16;
 
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub struct GridVector {
-    pub x: GridCord,
-    pub y: GridCord,
+    pub x: GridUnit,
+    pub y: GridUnit,
 }
 
 #[derive(Debug)]
