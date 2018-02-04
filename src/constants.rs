@@ -11,7 +11,7 @@ pub const BLINK_INTERVAL: f64 = 0.08;
 pub const BLINK_LENGTH_AFTER_DEATH: f64 = 0.6;
 pub const COLOR_BACKGROUND: Color = Color {
     r: 0.0078,
-    g: 0.0529,
+    g: 0.0569,
     b: 0.0762,
     a: 1.0,
 };
