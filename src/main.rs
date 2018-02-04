@@ -1,5 +1,3 @@
-#![feature(duration_extras)]
-
 extern crate ggez;
 extern crate rand;
 
