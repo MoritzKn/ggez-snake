@@ -359,7 +359,6 @@ pub fn main() {
         let state = &mut MainState::new(ctx).unwrap();
         event::run(ctx, state).unwrap();
 
-        // TODO: fdsg
         if !state.play_again {
             break;
         }
