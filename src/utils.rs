@@ -16,18 +16,25 @@ pub fn modulus(n: GridUnit, m: GridUnit) -> GridUnit {
     ((n % m) + m) % m
 }
 
-pub fn wrap_in_grid(gv: GridVector) -> GridVector {
+pub fn wrap_in(area: &GridArea, point: GridVector) -> GridVector {
     GridVector {
-        x: modulus(gv.x, GRID_SIZE.x),
-        y: modulus(gv.y, GRID_SIZE.y),
+        x: modulus(point.x - area.pos.x, area.size.x) + area.pos.x,
+        y: modulus(point.y - area.pos.x, area.size.y) + area.pos.x,
     }
 }
 
-pub fn random_grid_pos() -> GridVector {
-    wrap_in_grid(GridVector {
-        x: random::<GridUnit>(),
-        y: random::<GridUnit>(),
-    })
+pub fn wrap_in_grid(point: GridVector) -> GridVector {
+    wrap_in(&GRID_AREA, point)
+}
+
+pub fn random_pos(area: &GridArea) -> GridVector {
+    wrap_in(
+        &area,
+        GridVector {
+            x: random::<GridUnit>(),
+            y: random::<GridUnit>(),
+        },
+    )
 }
 
 pub fn gv_to_rect(gv: &GridVector) -> graphics::Rect {

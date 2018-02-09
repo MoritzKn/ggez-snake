@@ -1,7 +1,7 @@
 use base_types::*;
 use constants::*;
 use std::time::Instant;
-use utils::random_grid_pos;
+use utils::random_pos;
 
 #[derive(Debug)]
 pub struct Snake {
@@ -18,7 +18,7 @@ pub struct Snake {
 impl Snake {
     pub fn new() -> Self {
         Snake {
-            tail: vec![random_grid_pos()],
+            tail: vec![random_pos(&PLAY_AREA)],
             velocity: INITIAL_VELOCITY,
             input: None,
             speed: INITIAL_SPEED,

@@ -4,6 +4,7 @@ extern crate rand;
 mod apple;
 mod assets;
 mod base_types;
+mod stone;
 mod button;
 mod constants;
 mod snake;
@@ -18,6 +19,7 @@ use ggez::*;
 use ggez::event::*;
 use snake::Snake;
 use std::time::Instant;
+use stone::{level_corners, Stone};
 use utils::*;
 
 fn create_restart_button(ctx: &mut Context, font: &graphics::Font) -> GameResult<Button> {
@@ -37,6 +39,7 @@ fn create_restart_button(ctx: &mut Context, font: &graphics::Font) -> GameResult
 struct MainState {
     snake: Snake,
     apple: Apple,
+    stones: Vec<Stone>,
     assets: Assets,
     ui_update_needed: bool,
     score_text: graphics::Text,
@@ -46,16 +49,33 @@ struct MainState {
     game_over: bool,
 }
 
+fn spawn_apple_in_area(area: &GridArea, conflicts: &Vec<GridVector>) -> Apple {
+    let pos = loop {
+        let pos = random_pos(area);
+
+        if conflicts
+            .iter()
+            .all(|conflicting_pos| *conflicting_pos != pos)
+        {
+            break pos;
+        }
+    };
+
+    Apple::new(pos)
+}
+
 impl MainState {
     fn new(ctx: &mut Context) -> GameResult<MainState> {
+        let snake = Snake::new();
+        let apple = spawn_apple_in_area(&PLAY_AREA, &snake.tail);
         let assets = Assets::load(ctx)?;
-
         let score_text = graphics::Text::new(ctx, "Score: 0", &assets.font_default)?;
         let game_over_text = graphics::Text::new(ctx, "Game Over", &assets.font_game_over)?;
 
         let state = MainState {
-            snake: Snake::new(),
-            apple: Apple::new(),
+            snake,
+            apple,
+            stones: level_corners(),
             assets,
             ui_update_needed: true,
             score_text,
@@ -117,20 +137,28 @@ impl event::EventHandler for MainState {
                         }
                     }
 
+                    for stone in &self.stones {
+                        if stone.pos == new_head {
+                            snake.lost_at = Some(Instant::now());
+                        }
+                    }
+
                     if new_head == self.apple.position {
-                        self.apple = Apple::new();
+                        self.apple = spawn_apple_in_area(&PLAY_AREA, &snake.tail);
                         snake.speed -= snake.speed / SPEED_INCREASE_FRACTION;
                         snake.score += 1;
                         self.ui_update_needed = true;
                         snake.grow += GROW_PER_APPLE;
                     }
 
-                    if snake.grow > 0 {
-                        snake.grow -= 1;
-                    } else {
-                        snake.tail.remove(0);
+                    if snake.lost_at.is_none() {
+                        if snake.grow > 0 {
+                            snake.grow -= 1;
+                        } else {
+                            snake.tail.remove(0);
+                        }
+                        snake.tail.push(new_head);
                     }
-                    snake.tail.push(new_head);
                 }
 
                 snake.last_round = Instant::now();
@@ -198,6 +226,13 @@ impl event::EventHandler for MainState {
                         graphics::rectangle(ctx, graphics::DrawMode::Fill, gv_to_rect(segment))?;
                     }
                 }
+            }
+        }
+
+        // Draw stones
+        if !self.game_over {
+            for stone in &self.stones {
+                graphics::rectangle(ctx, graphics::DrawMode::Fill, gv_to_rect(&stone.pos))?;
             }
         }
 

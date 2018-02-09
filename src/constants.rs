@@ -2,8 +2,19 @@ use base_types::*;
 use ggez::graphics::Color;
 
 //--- Grid ---//
-pub const GRID_SIZE: GridVector = GridVector { x: 40, y: 22 };
 pub const GRID_TILE_SIZE: f32 = 20.0;
+pub const GRID_SIZE: GridVector = GridVector { x: 40, y: 22 };
+pub static GRID_AREA: GridArea = GridArea {
+    pos: GridVector { x: 0, y: 0 },
+    size: GRID_SIZE,
+};
+pub static PLAY_AREA: GridArea = GridArea {
+    pos: GridVector { x: 2, y: 2 },
+    size: GridVector {
+        x: GRID_SIZE.x - 4,
+        y: GRID_SIZE.y - 4,
+    },
+};
 
 //--- Visual ---//
 pub const APPLE_BLINK_TIME: f64 = 0.7;
