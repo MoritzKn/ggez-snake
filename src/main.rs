@@ -26,7 +26,7 @@ fn create_restart_button(ctx: &mut Context, font: &graphics::Font) -> GameResult
     Ok(Button::new(
         graphics::Text::new(ctx, "Restart", font)?,
         8.0 + FONT_DEFAULT_SIZE as f32,
-        75.0,
+        60.0,
         graphics::Rect::new(
             (ctx.conf.window_mode.width as f32 / 2.0) - (110.0 / 2.0),
             (ctx.conf.window_mode.height as f32 / 2.0) - (50.0 / 2.0) + 120.0,
@@ -278,14 +278,14 @@ impl event::EventHandler for MainState {
                     ctx.conf.window_mode.height as f32 / 2.0,
                 );
                 let dest = graphics::Point2::new(
-                    center.x - 180.0,
+                    center.x - 145.0,
                     center.y - (FONT_GAME_OVER_SIZE as f32 * 1.4) / 2.0 - 60.0,
                 );
                 graphics::draw(ctx, &self.game_over_text, dest, 0.0)?;
 
                 // Draw final score
                 let dest = graphics::Point2::new(
-                    center.x - 84.0,
+                    center.x - 60.0,
                     center.y - (FONT_DEFAULT_SIZE as f32 * 1.4) / 2.0 + 10.0,
                 );
                 graphics::draw(ctx, &self.score_text, dest, 0.0)?;

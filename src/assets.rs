@@ -8,8 +8,9 @@ pub struct Assets {
 
 impl Assets {
     pub fn load(ctx: &mut Context) -> GameResult<Self> {
-        let font_default = graphics::Font::new(ctx, "/VT323-Regular.ttf", FONT_DEFAULT_SIZE)?;
-        let font_game_over = graphics::Font::new(ctx, "/VT323-Regular.ttf", FONT_GAME_OVER_SIZE)?;
+        let font_default = graphics::Font::new(ctx, "/SHPinscher-Regular.ttf", FONT_DEFAULT_SIZE)?;
+        let font_game_over =
+            graphics::Font::new(ctx, "/SHPinscher-Regular.ttf", FONT_GAME_OVER_SIZE)?;
         Ok(Assets {
             font_default,
             font_game_over,
