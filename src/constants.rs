@@ -3,7 +3,7 @@ use ggez::graphics::Color;
 
 //--- Grid ---//
 pub const GRID_TILE_SIZE: f32 = 20.0;
-pub const GRID_SIZE: GridVector = GridVector { x: 40, y: 22 };
+pub const GRID_SIZE: GridVector = GridVector { x: 48, y: 30 };
 pub static GRID_AREA: GridArea = GridArea {
     pos: GridVector { x: 0, y: 0 },
     size: GRID_SIZE,
@@ -40,8 +40,8 @@ pub const INFO_BAR_HIGHT: f32 = 40.0;
 
 //--- Game play ---//
 pub const INITIAL_SIZE: GridUnit = 2;
-pub const INITIAL_SPEED: f64 = 0.1;
-pub const INITIAL_VELOCITY: GridVector = GridVector { x: 1, y: 0 };
+pub const INITIAL_SPEED: f64 = 0.08;
+pub const INITIAL_VELOCITY: GridVector = GridVector { x: 0, y: 0 };
 
 pub const GROW_PER_APPLE: GridUnit = 3;
 pub const SPEED_INCREASE_FRACTION: f64 = 36.0;
