@@ -1,6 +1,6 @@
 use constants::*;
-use ggez::*;
 use ggez::event::MouseButton;
+use ggez::*;
 use utils::*;
 
 fn pos_in_rect(rect: graphics::Rect, x: i32, y: i32) -> bool {
