@@ -36,14 +36,6 @@ impl ops::Sub<GridVector> for GridVector {
     }
 }
 
-#[derive(Debug)]
-pub enum Input {
-    Up,
-    Down,
-    Left,
-    Right,
-}
-
 pub struct GridArea {
     pub pos: GridVector,
     pub size: GridVector,

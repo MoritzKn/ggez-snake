@@ -7,7 +7,6 @@ use utils::random_pos;
 pub struct Snake {
     pub tail: Vec<GridVector>,
     pub velocity: GridVector,
-    pub input: Option<Input>,
     pub speed: f64,
     pub last_round: Instant,
     pub lost_at: Option<Instant>,
@@ -20,7 +19,6 @@ impl Snake {
         Snake {
             tail: vec![random_pos(&PLAY_AREA)],
             velocity: INITIAL_VELOCITY,
-            input: None,
             speed: INITIAL_SPEED,
             last_round: Instant::now(),
             lost_at: None,

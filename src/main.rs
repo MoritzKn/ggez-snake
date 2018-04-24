@@ -18,6 +18,7 @@ use constants::*;
 use ggez::event::*;
 use ggez::*;
 use snake::Snake;
+use std::collections::HashSet;
 use std::time::Instant;
 use stone::{level_corners, Stone};
 use utils::*;
@@ -38,6 +39,7 @@ fn create_restart_button(ctx: &mut Context, font: &graphics::Font) -> GameResult
 
 struct MainState {
     snake: Snake,
+    pressed_keys: HashSet<Keycode>,
     apple: Apple,
     stones: Vec<Stone>,
     assets: Assets,
@@ -74,6 +76,7 @@ impl MainState {
 
         let state = MainState {
             snake,
+            pressed_keys: HashSet::new(),
             apple,
             stones: level_corners(),
             assets,
@@ -110,16 +113,16 @@ impl event::EventHandler for MainState {
                 self.game_over = since(lost_at) > GAME_OVER_TIMEOUT;
                 self.ui_update_needed = true;
             } else if since(snake.last_round) > snake.speed {
-                if let Some(ref input) = snake.input {
-                    snake.velocity = match *input {
-                        Input::Up if snake.velocity.y != 1 => GridVector { x: 0, y: -1 },
-                        Input::Down if snake.velocity.y != -1 => GridVector { x: 0, y: 1 },
-                        Input::Left if snake.velocity.x != 1 => GridVector { x: -1, y: 0 },
-                        Input::Right if snake.velocity.x != -1 => GridVector { x: 1, y: 0 },
-                        _ => snake.velocity,
-                    };
+                if self.pressed_keys.contains(&Keycode::W) && snake.velocity.y != 1 {
+                    snake.velocity = GridVector { x: 0, y: -1 };
+                } else if self.pressed_keys.contains(&Keycode::S) && snake.velocity.y != -1 {
+                    snake.velocity = GridVector { x: 0, y: 1 };
+                } else if self.pressed_keys.contains(&Keycode::A) && snake.velocity.x != 1 {
+                    snake.velocity = GridVector { x: -1, y: 0 };
+                } else if self.pressed_keys.contains(&Keycode::D) && snake.velocity.x != -1 {
+                    snake.velocity = GridVector { x: 1, y: 0 };
                 }
-                snake.input = None;
+
                 if snake.velocity != (GridVector { x: 0, y: 0 }) {
                     let new_head;
                     {
@@ -302,22 +305,22 @@ impl event::EventHandler for MainState {
     }
 
     fn key_down_event(&mut self, ctx: &mut Context, keycode: Keycode, _keymod: Mod, _repeat: bool) {
-        match keycode {
-            Keycode::W if self.snake.velocity.y != 1 => self.snake.input = Some(Input::Up),
-            Keycode::S if self.snake.velocity.y != -1 => self.snake.input = Some(Input::Down),
-            Keycode::A if self.snake.velocity.x != 1 => self.snake.input = Some(Input::Left),
-            Keycode::D if self.snake.velocity.x != -1 => self.snake.input = Some(Input::Right),
-            Keycode::Space if self.restart_button.is_some() => {
-                self.play_again = true;
-                ctx.quit().unwrap();
-            }
-            _ => {}
+        self.pressed_keys.insert(keycode);
+
+        if keycode == Keycode::Space && self.restart_button.is_some() {
+            self.play_again = true;
+            ctx.quit().unwrap();
         }
 
         if keycode == Keycode::Escape {
             ctx.quit().unwrap();
         }
     }
+
+    fn key_up_event(&mut self, _ctx: &mut Context, keycode: Keycode, _keymod: Mod, _repeat: bool) {
+        self.pressed_keys.remove(&keycode);
+    }
+
     fn mouse_button_down_event(&mut self, _ctx: &mut Context, mb: MouseButton, x: i32, y: i32) {
         if let Some(ref mut button) = self.restart_button {
             button.notifiy_mouse_down(mb, x, y);
