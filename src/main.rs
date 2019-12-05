@@ -10,26 +10,36 @@ mod snake;
 mod stone;
 mod utils;
 
+use std::time::Instant;
+
+use ggez::event::{quit, run, EventHandler, KeyCode, KeyMods, MouseButton};
+use ggez::graphics::{
+    clear, draw, present, Align, DrawMode, Font, Mesh, Rect, Scale, StrokeOptions, Text,
+};
+use ggez::nalgebra as na;
+use ggez::{conf, ContextBuilder};
+use ggez::{Context, GameResult};
+
 use apple::Apple;
 use assets::Assets;
 use base_types::*;
 use button::Button;
 use constants::*;
-use ggez::event::*;
-use ggez::*;
 use snake::Snake;
-use std::time::Instant;
 use stone::{level_corners, Stone};
 use utils::*;
 
-fn create_restart_button(ctx: &mut Context, font: &graphics::Font) -> GameResult<Button> {
+const WINDOW_W: f32 = GRID_SIZE.x as f32 * GRID_TILE_SIZE;
+const WINDOW_H: f32 = GRID_SIZE.y as f32 * GRID_TILE_SIZE + INFO_BAR_HIGHT;
+
+fn create_restart_button(text: &str, font: Font) -> GameResult<Button> {
     Ok(Button::new(
-        graphics::Text::new(ctx, "Restart", font)?,
+        text,
         8.0 + FONT_DEFAULT_SIZE as f32,
-        60.0,
-        graphics::Rect::new(
-            (ctx.conf.window_mode.width as f32 / 2.0) - (110.0 / 2.0),
-            (ctx.conf.window_mode.height as f32 / 2.0) - (50.0 / 2.0) + 120.0,
+        font,
+        Rect::new(
+            (WINDOW_W / 2.0) - (110.0 / 2.0),
+            (WINDOW_H / 2.0) - (50.0 / 2.0) + 120.0,
             110.0,
             50.0,
         ),
@@ -38,19 +48,19 @@ fn create_restart_button(ctx: &mut Context, font: &graphics::Font) -> GameResult
 
 struct MainState {
     snake: Snake,
-    inputs: Vec<Keycode>,
+    inputs: Vec<KeyCode>,
     apple: Apple,
     stones: Vec<Stone>,
     assets: Assets,
     ui_update_needed: bool,
-    score_text: graphics::Text,
-    game_over_text: graphics::Text,
+    score_text: Text,
+    game_over_text: Text,
     play_again: bool,
     restart_button: Option<Button>,
     game_over: bool,
 }
 
-fn spawn_apple_in_area(area: &GridArea, conflicts: &Vec<GridVector>) -> Apple {
+fn spawn_apple_in_area(area: &GridArea, conflicts: &[GridVector]) -> Apple {
     let pos = loop {
         let pos = random_pos(area);
 
@@ -70,8 +80,10 @@ impl MainState {
         let snake = Snake::new();
         let apple = spawn_apple_in_area(&PLAY_AREA, &snake.tail);
         let assets = Assets::load(ctx)?;
-        let score_text = graphics::Text::new(ctx, "Score: 0", &assets.font_default)?;
-        let game_over_text = graphics::Text::new(ctx, "Game Over", &assets.font_game_over)?;
+        let mut score_text = Text::new("Score: 0");
+        score_text.set_font(assets.font, Scale::uniform(FONT_DEFAULT_SIZE));
+        let mut game_over_text = Text::new("Game Over");
+        game_over_text.set_font(assets.font, Scale::uniform(FONT_GAME_OVER_SIZE));
 
         let state = MainState {
             snake,
@@ -90,20 +102,34 @@ impl MainState {
         Ok(state)
     }
 
-    fn update_ui(&mut self, ctx: &mut Context) -> GameResult<()> {
+    fn reset(&mut self) {
+        let snake = Snake::new();
+        let apple = spawn_apple_in_area(&PLAY_AREA, &snake.tail);
+
+        self.snake = snake;
+        self.inputs = vec![];
+        self.apple = apple;
+        self.stones = level_corners();
+        self.ui_update_needed = true;
+        self.play_again = false;
+        self.restart_button = None;
+        self.game_over = false;
+    }
+
+    fn update_ui(&mut self) {
         let score_text = if self.game_over {
             format!("Final Score: {}", self.snake.score)
         } else {
             format!("Score: {}", self.snake.score)
         };
-        self.score_text = graphics::Text::new(ctx, &score_text, &self.assets.font_default)?;
-
-        Ok(())
+        self.score_text = Text::new(score_text);
+        self.score_text
+            .set_font(self.assets.font, Scale::uniform(FONT_DEFAULT_SIZE));
     }
 }
 
-impl event::EventHandler for MainState {
-    fn update(&mut self, ctx: &mut Context) -> GameResult<()> {
+impl EventHandler for MainState {
+    fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
         // Update snake
         if !self.game_over {
             let snake = &mut self.snake;
@@ -115,16 +141,16 @@ impl event::EventHandler for MainState {
                 let mut new_velocity = None;
                 for input in &self.inputs {
                     match *input {
-                        Keycode::W if snake.velocity.y != 1 => {
+                        KeyCode::W if snake.velocity.y != 1 => {
                             new_velocity = Some(GridVector { x: 0, y: -1 });
                         }
-                        Keycode::S if snake.velocity.y != -1 => {
+                        KeyCode::S if snake.velocity.y != -1 => {
                             new_velocity = Some(GridVector { x: 0, y: 1 });
                         }
-                        Keycode::A if snake.velocity.x != 1 => {
+                        KeyCode::A if snake.velocity.x != 1 => {
                             new_velocity = Some(GridVector { x: -1, y: 0 });
                         }
-                        Keycode::D if snake.velocity.x != -1 => {
+                        KeyCode::D if snake.velocity.x != -1 => {
                             new_velocity = Some(GridVector { x: 1, y: 0 });
                         }
                         _ => {}
@@ -188,7 +214,7 @@ impl event::EventHandler for MainState {
                 if let Some(lost_at) = self.snake.lost_at {
                     if since(lost_at) > GAME_OVER_TIMEOUT {
                         self.restart_button =
-                            Some(create_restart_button(ctx, &self.assets.font_default)?);
+                            Some(create_restart_button("Restart", self.assets.font)?);
                     }
                 }
             }
@@ -197,7 +223,6 @@ impl event::EventHandler for MainState {
         if let Some(ref mut button) = self.restart_button {
             if button.unhandled_click() {
                 self.play_again = true;
-                ctx.quit()?;
             }
         }
 
@@ -205,16 +230,20 @@ impl event::EventHandler for MainState {
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
-        graphics::set_background_color(ctx, COLOR_BACKGROUND);
-        graphics::set_color(ctx, COLOR_FOREGROUND)?;
-        graphics::clear(ctx);
+        clear(ctx, COLOR_BACKGROUND);
 
         // Draw apple
         if !self.game_over {
             let apple = &self.apple;
             let since_spawn = since(apple.spawned_at);
             if since_spawn > APPLE_BLINK_TIME || blinks(since_spawn) {
-                graphics::rectangle(ctx, graphics::DrawMode::Fill, gv_to_rect(&apple.position))?;
+                let rectangle = Mesh::new_rectangle(
+                    ctx,
+                    DrawMode::fill(),
+                    gv_to_rect(&apple.position),
+                    COLOR_FOREGROUND,
+                )?;
+                draw(ctx, &rectangle, (na::Point2::new(0.0, 0.0),))?;
             }
         }
 
@@ -224,23 +253,35 @@ impl event::EventHandler for MainState {
 
             if snake.lost_at.is_none() {
                 for segement in &snake.tail {
-                    graphics::rectangle(ctx, graphics::DrawMode::Fill, gv_to_rect(segement))?;
+                    let rectangle = Mesh::new_rectangle(
+                        ctx,
+                        DrawMode::fill(),
+                        gv_to_rect(segement),
+                        COLOR_FOREGROUND,
+                    )?;
+                    draw(ctx, &rectangle, (na::Point2::new(0.0, 0.0),))?;
                 }
                 let segement = &snake.tail[snake.tail.len() - 1];
-                graphics::set_color(ctx, COLOR_BACKGROUND)?;
-                graphics::rectangle(
+                let rectangle = Mesh::new_rectangle(
                     ctx,
-                    graphics::DrawMode::Fill,
+                    DrawMode::fill(),
                     scale_rect(gv_to_rect(segement), -2.0),
+                    COLOR_BACKGROUND,
                 )?;
-                graphics::set_color(ctx, COLOR_FOREGROUND)?;
+                draw(ctx, &rectangle, (na::Point2::new(0.0, 0.0),))?;
             } else if let Some(lost_at) = snake.lost_at {
                 let since_lost = since(lost_at);
                 if since_lost < BLINK_LENGTH_AFTER_DEATH
                     && since_lost % (BLINK_INTERVAL * 2.0) < BLINK_INTERVAL
                 {
                     for segment in &snake.tail {
-                        graphics::rectangle(ctx, graphics::DrawMode::Fill, gv_to_rect(segment))?;
+                        let rectangle = Mesh::new_rectangle(
+                            ctx,
+                            DrawMode::fill(),
+                            gv_to_rect(segment),
+                            COLOR_FOREGROUND,
+                        )?;
+                        draw(ctx, &rectangle, (na::Point2::new(0.0, 0.0),))?;
                     }
                 }
             }
@@ -249,63 +290,69 @@ impl event::EventHandler for MainState {
         // Draw stones
         if !self.game_over {
             for stone in &self.stones {
-                graphics::rectangle(ctx, graphics::DrawMode::Fill, gv_to_rect(&stone.pos))?;
+                let rectangle = Mesh::new_rectangle(
+                    ctx,
+                    DrawMode::fill(),
+                    gv_to_rect(&stone.pos),
+                    COLOR_FOREGROUND,
+                )?;
+                draw(ctx, &rectangle, (na::Point2::new(0.0, 0.0),))?;
             }
         }
 
         // Draw UI
         {
             if self.ui_update_needed {
-                self.update_ui(ctx)?;
+                self.update_ui();
                 self.ui_update_needed = false;
             }
             // Draw info bar
             if !self.game_over {
                 // Draw background
                 {
-                    let width = ctx.conf.window_mode.width as f32;
+                    let width = WINDOW_W as f32;
 
-                    let rect = graphics::Rect::new(0.0, 0.0, width, INFO_BAR_HIGHT);
-                    graphics::rectangle(ctx, graphics::DrawMode::Fill, rect)?;
-
-                    graphics::set_color(ctx, COLOR_BACKGROUND)?;
-                    let rect = scale_rect(rect, -2.0);
-                    graphics::rectangle(ctx, graphics::DrawMode::Line(2.0), rect)?;
-                    graphics::set_color(ctx, COLOR_FOREGROUND)?;
+                    let rect = Rect::new(0.0, 0.0, width, INFO_BAR_HIGHT);
+                    let rectangle =
+                        Mesh::new_rectangle(ctx, DrawMode::fill(), rect, COLOR_FOREGROUND)?;
+                    draw(ctx, &rectangle, (na::Point2::new(0.0, 0.0),))?;
+                    let rectangle = Mesh::new_rectangle(
+                        ctx,
+                        DrawMode::Stroke(StrokeOptions::default().with_line_width(2.0)),
+                        scale_rect(rect, -2.0),
+                        COLOR_BACKGROUND,
+                    )?;
+                    draw(ctx, &rectangle, (na::Point2::new(0.0, 0.0),))?;
                 }
 
                 // Draw content
                 {
-                    graphics::set_color(ctx, COLOR_BACKGROUND)?;
-
-                    let dest = graphics::Point2::new(
+                    let dest = na::Point2::new(
                         12.0,
                         (INFO_BAR_HIGHT - FONT_DEFAULT_SIZE as f32) / 2.0 - 4.0,
                     );
-                    graphics::draw(ctx, &self.score_text, dest, 0.0)?;
-
-                    graphics::set_color(ctx, COLOR_FOREGROUND)?;
+                    draw(ctx, &self.score_text, (dest,))?;
                 }
             }
 
             if self.game_over {
                 // Draw game over text
-                let center = graphics::Point2::new(
-                    ctx.conf.window_mode.width as f32 / 2.0,
-                    ctx.conf.window_mode.height as f32 / 2.0,
+                let dest = na::Point2::new(
+                    0.0,
+                    (WINDOW_H / 2.0) - (FONT_GAME_OVER_SIZE as f32 * 1.4) / 2.0 - 60.0,
                 );
-                let dest = graphics::Point2::new(
-                    center.x - 145.0,
-                    center.y - (FONT_GAME_OVER_SIZE as f32 * 1.4) / 2.0 - 60.0,
-                );
-                graphics::draw(ctx, &self.game_over_text, dest, 0.0)?;
+                self.game_over_text
+                    .set_bounds(na::Point2::new(WINDOW_W, WINDOW_H), Align::Center);
+                draw(ctx, &self.game_over_text, (dest,))?;
 
                 // Draw final score
-                let dest = graphics::Point2::new(
-                    center.x - 60.0,
-                    center.y - (FONT_DEFAULT_SIZE as f32 * 1.4) / 2.0 + 10.0,
+                let dest = na::Point2::new(
+                    0.0,
+                    (WINDOW_H / 2.0) - (FONT_DEFAULT_SIZE as f32 * 1.4) / 2.0 + 10.0,
                 );
-                graphics::draw(ctx, &self.score_text, dest, 0.0)?;
+                self.score_text
+                    .set_bounds(na::Point2::new(WINDOW_W, WINDOW_H), Align::Center);
+                draw(ctx, &self.score_text, (dest,))?;
 
                 // Draw reset button
                 if let Some(ref mut button) = self.restart_button {
@@ -314,50 +361,51 @@ impl event::EventHandler for MainState {
             }
         }
 
-        graphics::present(ctx);
+        if self.game_over && self.play_again {
+            self.reset();
+        }
+
+        present(ctx)?;
         Ok(())
     }
 
-    fn key_down_event(&mut self, ctx: &mut Context, keycode: Keycode, _keymod: Mod, _repeat: bool) {
+    fn key_down_event(
+        &mut self,
+        ctx: &mut Context,
+        keycode: KeyCode,
+        _keymod: KeyMods,
+        _repeat: bool,
+    ) {
         self.inputs.push(keycode);
 
-        if keycode == Keycode::Space && self.restart_button.is_some() {
+        if keycode == KeyCode::Space && self.restart_button.is_some() {
             self.play_again = true;
-            ctx.quit().unwrap();
         }
 
-        if keycode == Keycode::Escape {
-            ctx.quit().unwrap();
+        if keycode == KeyCode::Escape {
+            quit(ctx);
         }
     }
 
-    fn key_up_event(&mut self, _ctx: &mut Context, keycode: Keycode, _keymod: Mod, _repeat: bool) {
+    fn key_up_event(&mut self, _ctx: &mut Context, keycode: KeyCode, _keymod: KeyMods) {
         if let Some(index) = self.inputs.iter().position(|&i| i == keycode) {
             self.inputs.remove(index);
         }
     }
 
-    fn mouse_button_down_event(&mut self, _ctx: &mut Context, mb: MouseButton, x: i32, y: i32) {
+    fn mouse_button_down_event(&mut self, _ctx: &mut Context, mb: MouseButton, x: f32, y: f32) {
         if let Some(ref mut button) = self.restart_button {
             button.notifiy_mouse_down(mb, x, y);
         }
     }
 
-    fn mouse_button_up_event(&mut self, _ctx: &mut Context, mb: MouseButton, x: i32, y: i32) {
+    fn mouse_button_up_event(&mut self, _ctx: &mut Context, mb: MouseButton, x: f32, y: f32) {
         if let Some(ref mut button) = self.restart_button {
             button.notifiy_mouse_up(mb, x, y);
         }
     }
 
-    fn mouse_motion_event(
-        &mut self,
-        _ctx: &mut Context,
-        _state: MouseState,
-        x: i32,
-        y: i32,
-        _xrel: i32,
-        _yrel: i32,
-    ) {
+    fn mouse_motion_event(&mut self, _ctx: &mut Context, x: f32, y: f32, _xrel: f32, _yrel: f32) {
         if let Some(ref mut button) = self.restart_button {
             button.notifiy_mouse_motion(x, y);
         }
@@ -367,19 +415,10 @@ impl event::EventHandler for MainState {
 pub fn main() {
     let cb = ContextBuilder::new("snake", "moritzkn")
         .window_setup(conf::WindowSetup::default().title("Snake"))
-        .window_mode(conf::WindowMode::default().dimensions(
-            GRID_SIZE.x as u32 * GRID_TILE_SIZE as u32,
-            GRID_SIZE.y as u32 * GRID_TILE_SIZE as u32 + INFO_BAR_HIGHT as u32,
-        ));
+        .window_mode(conf::WindowMode::default().dimensions(WINDOW_W, WINDOW_H));
 
-    let ctx = &mut cb.build().unwrap();
+    let (ctx, event_loop) = &mut cb.build().unwrap();
 
-    loop {
-        let state = &mut MainState::new(ctx).unwrap();
-        event::run(ctx, state).unwrap();
-
-        if !state.play_again {
-            break;
-        }
-    }
+    let state = &mut MainState::new(ctx).unwrap();
+    run(ctx, event_loop, state).unwrap();
 }

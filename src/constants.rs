@@ -32,8 +32,8 @@ pub const COLOR_FOREGROUND: Color = Color {
     b: 1.0,
     a: 1.0,
 };
-pub const FONT_DEFAULT_SIZE: u32 = 22;
-pub const FONT_GAME_OVER_SIZE: u32 = 80;
+pub const FONT_DEFAULT_SIZE: f32 = 22.0;
+pub const FONT_GAME_OVER_SIZE: f32 = 80.0;
 pub const GAME_OVER_TIMEOUT: f64 = 0.9;
 pub const GRID_TILE_PADDING: f32 = 1.0;
 pub const INFO_BAR_HIGHT: f32 = 40.0;

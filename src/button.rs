@@ -1,34 +1,33 @@
-use constants::*;
 use ggez::event::MouseButton;
-use ggez::*;
+use ggez::graphics::{
+    draw, Align, DrawMode, Font, Mesh, Rect, Scale, StrokeOptions, Text, TextFragment,
+};
+use ggez::nalgebra as na;
+use ggez::{Context, GameResult};
+
+use constants::*;
 use utils::*;
 
-fn pos_in_rect(rect: graphics::Rect, x: i32, y: i32) -> bool {
-    x > rect.x as i32 && y > rect.y as i32 && x < rect.x as i32 + rect.w as i32
-        && y < rect.y as i32 + rect.h as i32
+fn pos_in_rect(rect: Rect, x: f32, y: f32) -> bool {
+    x > rect.x && y > rect.y && x < rect.x + rect.w && y < rect.y + rect.h
 }
 
 pub struct Button {
-    pub text: graphics::Text,
+    pub text: String,
+    pub font: Font,
     pub line_hight: f32,
-    pub text_length: f32,
-    pub rect: graphics::Rect,
+    pub rect: Rect,
     pub under_mouse: bool,
     pub pressed: bool,
     pub was_clicked: bool,
 }
 
 impl Button {
-    pub fn new(
-        text: graphics::Text,
-        line_hight: f32,
-        text_length: f32,
-        rect: graphics::Rect,
-    ) -> Self {
+    pub fn new(text: &str, line_hight: f32, font: Font, rect: Rect) -> Self {
         Button {
-            text,
+            text: text.to_string(),
+            font,
             line_hight,
-            text_length,
             rect,
             under_mouse: false,
             pressed: false,
@@ -36,7 +35,7 @@ impl Button {
         }
     }
 
-    pub fn notifiy_mouse_down(&mut self, mb: MouseButton, x: i32, y: i32) {
+    pub fn notifiy_mouse_down(&mut self, mb: MouseButton, x: f32, y: f32) {
         if mb == MouseButton::Left {
             self.under_mouse = pos_in_rect(self.rect, x, y);
             if self.under_mouse {
@@ -47,11 +46,10 @@ impl Button {
         }
     }
 
-    pub fn notifiy_mouse_up(&mut self, mb: MouseButton, x: i32, y: i32) {
+    pub fn notifiy_mouse_up(&mut self, mb: MouseButton, x: f32, y: f32) {
         if mb == MouseButton::Left {
             self.under_mouse = pos_in_rect(self.rect, x, y);
             if self.under_mouse && self.pressed {
-                println!("click");
                 self.was_clicked = true;
             } else {
                 self.pressed = false;
@@ -59,7 +57,7 @@ impl Button {
         }
     }
 
-    pub fn notifiy_mouse_motion(&mut self, x: i32, y: i32) {
+    pub fn notifiy_mouse_motion(&mut self, x: f32, y: f32) {
         self.under_mouse = pos_in_rect(self.rect, x, y);
     }
 
@@ -71,25 +69,46 @@ impl Button {
 
     pub fn draw(&self, ctx: &mut Context) -> GameResult<()> {
         if self.under_mouse {
-            graphics::rectangle(ctx, graphics::DrawMode::Fill, self.rect)?;
+            let rectangle =
+                Mesh::new_rectangle(ctx, DrawMode::fill(), self.rect, COLOR_FOREGROUND)?;
+            draw(ctx, &rectangle, (na::Point2::new(0.0, 0.0),))?;
 
-            graphics::set_color(ctx, COLOR_BACKGROUND)?;
-            let rect = scale_rect(self.rect, -2.0);
-            graphics::rectangle(ctx, graphics::DrawMode::Line(2.0), rect)?;
+            let rectangle = Mesh::new_rectangle(
+                ctx,
+                DrawMode::Stroke(StrokeOptions::default().with_line_width(2.0)),
+                scale_rect(self.rect, -2.0),
+                COLOR_BACKGROUND,
+            )?;
+            draw(ctx, &rectangle, (na::Point2::new(0.0, 0.0),))?;
         } else {
-            let rect = scale_rect(self.rect, -1.0);
-            graphics::rectangle(ctx, graphics::DrawMode::Line(2.0), rect)?;
+            let rectangle = Mesh::new_rectangle(
+                ctx,
+                DrawMode::Stroke(StrokeOptions::default().with_line_width(2.0)),
+                scale_rect(self.rect, -1.0),
+                COLOR_FOREGROUND,
+            )?;
+            draw(ctx, &rectangle, (na::Point2::new(0.0, 0.0),))?;
         }
 
         {
-            let dest = graphics::Point2::new(
-                self.rect.x + self.rect.w / 2.0 - self.text_length / 2.0,
+            let dest = na::Point2::new(
+                self.rect.x,
                 self.rect.y + self.rect.h / 2.0 - self.line_hight / 2.0,
             );
-            graphics::draw(ctx, &self.text, dest, 0.0)?;
+
+            let frag = TextFragment::new(self.text.to_string());
+            let mut text = if self.under_mouse {
+                Text::new(frag.color(COLOR_BACKGROUND))
+            } else {
+                Text::new(frag)
+            };
+
+            text.set_font(self.font, Scale::uniform(FONT_DEFAULT_SIZE));
+            text.set_bounds(na::Point2::new(self.rect.w, self.rect.h), Align::Center);
+
+            draw(ctx, &text, (dest,))?;
         }
 
-        graphics::set_color(ctx, COLOR_FOREGROUND)?;
         Ok(())
     }
 }

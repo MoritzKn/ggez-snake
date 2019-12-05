@@ -4,5 +4,5 @@ name = "ggez-snake"
 version = "0.1.0"
 
 [dependencies]
-ggez = {version = "0.4.2", features = ["cargo-resource-root"]}
-rand = "0.4.2"
+ggez = "0.5.1"
+rand = "0.7.2"
