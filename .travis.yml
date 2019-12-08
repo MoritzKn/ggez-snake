@@ -10,11 +10,11 @@ matrix:
   allow_failures:
     - rust: nightly
 
-
-before_install:
-  - if [ "${TRAVIS_OS_NAME}" = "linux" ]; then
-      sudo apt-get -qq update && sudo apt-get install -y libasound2-dev;
-    fi
+addons:
+  apt:
+    packages:
+      - libudev-dev
+      - libasound2-dev
 
 install:
   - if [ "${TRAVIS_OS_NAME}" = "linux" ]; then
